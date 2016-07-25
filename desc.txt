@@ -1,0 +1,31 @@
+Hello,
+
+I am working the jqWidgets with the angular, then I found seems there would be some memory leaking when using the jqxGrid.
+
+I created one simple test case in http://plnkr.co/edit/Khgo7Lx4XbTlRyM977kF
+
+The demo contain two button to navigate 'step1' between 'step2'.
+
+The reproducing steps:
+	1. Go into step1, then open the Chrome dev tool and switch to Profiles, take one Snapshot for the js heap(Snapshot1).
+	2. Clikc the 'step2222' button to route into step2 page.
+	3. Click the 'step1111' button to route back to step1 page, then take one  Snapshot for the js heap(Snapshot2).
+	4. Select 'Snapshot2' then compare with 'Snapshot1' via switch the view to 'Comparison'.
+	5. Input 'scope' into 'Class filter".
+	6. Input 'jqx' into 'Class filter'
+
+Expect result:
+	5. Just remain 'ChildScope' of 'Step1Controller' and the 'ChildScope' of 'Step2Controller' should be destroy.
+	6. The objects from jqWidget should be removed.
+
+Actual result:
+	5. The 'ChildScope' of 'Step2Controller' still remain stay in memory.
+	6. The 'i.jqx.dataAdapter' still remain in memory.
+
+My analyze:
+	5. Select the 'ChildScope' of 'Step2Controller', in Retainers view, we can find there is one reference 'jqx._jqxGrid.prototype.definedInstance' to the scope. Then I check the code, I found in 'jqxAngular.js', the 'extendInstance' method will extend the jqxGrid prototype with the 'definedInstance' method, which would hold the scope instance in the jqxGrid prototype. And I can not find any remove code in the 'destroy' method. I think maybe it is the cause.
+
+	6. The 'i.jqx.dataAdapter' seems also missing some clean action.
+
+
+Thanks in advance.
